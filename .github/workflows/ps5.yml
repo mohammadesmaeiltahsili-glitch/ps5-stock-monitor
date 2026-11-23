@@ -1,0 +1,43 @@
+name: PS5 Stock & Price Monitor
+
+on:
+  schedule:
+    # Runs automatically every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+concurrency:
+  group: ps5-monitor
+  cancel-in-progress: false
+
+jobs:
+  check-stock:
+    name: Check PS5 Stock & Price
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright Chromium with system dependencies
+        run: |
+          playwright install --with-deps chromium
+
+      - name: Run PS5 Stock Checker
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python check_ps5.py
